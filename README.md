@@ -1,13 +1,16 @@
 # eBPF-Powered Linux Runtime Threat Detection & EDR Agent
 
-[![CI Pipeline](https://github.com/ravishkarathnayaka/ebpf-linux-edr-sensor/actions/workflows/ci.yml/badge.svg)](https://github.com/ravishkarathnayaka/ebpf-linux-edr-sensor/actions/workflows/ci.yml)
-[![Security Scan](https://github.com/ravishkarathnayaka/ebpf-linux-edr-sensor/actions/workflows/security-scan.yml/badge.svg)](https://github.com/ravishkarathnayaka/ebpf-linux-edr-sensor/actions/workflows/security-scan.yml)
+[![CI Pipeline](https://github.com/ravishkarathnayaka/eBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ravishkarathnayaka/eBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/ravishkarathnayaka/eBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent/actions/workflows/security-scan.yml/badge.svg)](https://github.com/ravishkarathnayaka/eBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent/actions/workflows/security-scan.yml)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/ravishkarathnayaka/eBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](https://www.python.org/)
 [![eBPF Kernel](https://img.shields.io/badge/eBPF-Tracepoints%20%26%20RingBuffers-purple.svg)](https://ebpf.io/)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK%20v14-red.svg)](https://attack.mitre.org/)
 
 An open-source, production-grade Linux Endpoint Detection and Response (**EDR**) sensor powered by **Extended Berkeley Packet Filter (eBPF)**. The agent attaches lightweight, in-kernel probes to raw Linux system call tracepoints, aggregates high-fidelity security telemetry with minimal CPU overhead, normalizes binary kernel events, and evaluates runtime activity in real-time against customizable YAML detection rules enriched with **MITRE ATT&CK®** tactics and techniques.
+
+> 🌐 **Interactive Web Demo:** Anyone can test simulated attack vectors, inspect raw decoded eBPF telemetry, and observe MITRE ATT&CK alert generation in the browser without installing anything: **[Open Web SOC Simulator](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fravishkarathnayaka%2FeBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent)** or host directly on **Vercel** with 1 click.
 
 ---
 
@@ -204,6 +207,8 @@ sudo python3 -m agent.main --rules-dir ./rules --bpf-dir ./bpf --alert-file /var
 
 ---
 
+---
+
 ### Option 3: Synthetic Dry-Run & Unit Testing
 
 You can verify rule evaluation, normalization, and MITRE enrichment on any operating system (including Windows and macOS) without root privileges or kernel headers:
@@ -215,6 +220,19 @@ python -m agent.main --dry-run
 # Run automated unit tests with pytest
 pytest -v tests/
 ```
+
+---
+
+### Option 4: Deploy Web SOC Simulator to Vercel (1-Click Free Hosting)
+
+Deploy the public Web Simulator to **Vercel** so recruiters, peers, and visitors can test attack scenarios and inspect decoded eBPF telemetry directly in their browser:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fravishkarathnayaka%2FeBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent)
+
+1. Log in to [Vercel.com](https://vercel.com) with your GitHub account.
+2. Click **"Add New..."** &rarr; **"Project"**.
+3. Select your repository: `eBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent`.
+4. Click **Deploy** (Vercel uses `vercel.json` to publish the `web/` directory automatically in 15 seconds with no build steps).
 
 ---
 

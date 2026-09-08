@@ -1,0 +1,28 @@
+{
+  "name": "eBPF Linux EDR Environment",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  "runArgs": [
+    "--privileged",
+    "--cap-add=SYS_ADMIN",
+    "--cap-add=BPF",
+    "--cap-add=PERFMON",
+    "--cap-add=SYS_RESOURCE",
+    "--pid=host"
+  ],
+  "mounts": [
+    "source=/sys/kernel/debug,target=/sys/kernel/debug,type=bind",
+    "source=/sys/fs/bpf,target=/sys/fs/bpf,type=bind",
+    "source=/lib/modules,target=/lib/modules,type=bind"
+  ],
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y bpfcc-tools libbpfcc-dev python3-bpfcc python3-pip gcc clang llvm && pip3 install -r requirements.txt",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "tamasfe.even-better-toml",
+        "redhat.vscode-yaml"
+      ]
+    }
+  }
+}

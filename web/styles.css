@@ -1,0 +1,55 @@
+/* Custom styling for eBPF EDR Web Portal */
+
+/* Custom scrollbars for dark mode */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #060a12;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e3057;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2b457c;
+}
+
+/* Pulse animation for active alert highlights */
+@keyframes alert-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 15px 4px rgba(239, 68, 68, 0.2);
+  }
+}
+
+.alert-new {
+  animation: alert-pulse 1.5s ease-in-out 2;
+}
+
+/* Terminal text glow */
+.term-cyan {
+  color: #38bdf8;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.term-green {
+  color: #34d399;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+}
+
+.term-red {
+  color: #f87171;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+}
+
+.term-yellow {
+  color: #fbbf24;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+}
