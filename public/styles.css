@@ -1,55 +1,52 @@
-/* Custom styling for eBPF EDR Web Portal */
+/* Industrial Cyber Defense Theme - styles.css */
 
-/* Custom scrollbars for dark mode */
+/* Custom Tactical Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #060a12;
+  background: #070809;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e3057;
-  border-radius: 4px;
+  background: #262b36;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2b457c;
+  background: #f59e0b;
 }
 
-/* Pulse animation for active alert highlights */
-@keyframes alert-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+/* Subtle CRT Phosphor Terminal Styling */
+.crt-screen {
+  background: radial-gradient(circle at 50% 50%, rgba(20, 23, 29, 0.4) 0%, rgba(7, 8, 9, 0.95) 100%);
+  text-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+}
+
+/* Pulse alert on new incoming high-priority breach */
+@keyframes tactical-alert-pulse {
+  0% {
+    border-color: rgba(244, 63, 94, 0.9);
+    box-shadow: 0 0 16px rgba(244, 63, 94, 0.35);
   }
   50% {
-    box-shadow: 0 0 15px 4px rgba(239, 68, 68, 0.2);
+    border-color: rgba(245, 158, 11, 0.9);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+  }
+  100% {
+    border-color: #2e3543;
+    box-shadow: none;
   }
 }
 
-.alert-new {
-  animation: alert-pulse 1.5s ease-in-out 2;
+.tactical-new-incident {
+  animation: tactical-alert-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) 1;
 }
 
-/* Terminal text glow */
-.term-cyan {
-  color: #38bdf8;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
-}
-
-.term-green {
-  color: #34d399;
-  text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
-}
-
-.term-red {
-  color: #f87171;
-  text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
-}
-
-.term-yellow {
-  color: #fbbf24;
-  text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+/* Monospace text selection */
+::selection {
+  background-color: rgba(245, 158, 11, 0.25);
+  color: #fde68a;
 }

