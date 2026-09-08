@@ -45,16 +45,43 @@ class BPFLoader:
         self._poll_threads: List[threading.Thread] = []
 
     def _load_probe_source(self, filename: str) -> str:
-        """Read BPF C source file from disk."""
+        """Read BPF C source file from disk and inline common.h to prevent BCC virtual path errors."""
         filepath = os.path.join(self.bpf_dir, filename)
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"BPF probe source not found at: {filepath}")
         with open(filepath, "r", encoding="utf-8") as f:
-            return f.read()
+            content = f.read()
+
+        # Inlining common.h directly avoids BCC /virtual/main.c include path resolution errors
+        common_h_candidates = [
+            os.path.join(self.include_dir, "common.h"),
+            os.path.join(self.bpf_dir, "include", "common.h"),
+            os.path.join(self.bpf_dir, "common.h"),
+        ]
+        common_h_content = ""
+        for cand in common_h_candidates:
+            if os.path.exists(cand):
+                with open(cand, "r", encoding="utf-8") as hf:
+                    common_h_content = hf.read()
+                break
+
+        if common_h_content:
+            import re
+            content = re.sub(
+                r'#include\s+["<](?:include/)?common\.h[">]',
+                lambda m: f"/* Inlined common.h */\n{common_h_content}\n",
+                content,
+            )
+
+        return content
 
     def _build_cflags(self) -> List[str]:
         """Generate compiler flags including search path for common.h."""
-        return [f"-I{self.include_dir}"]
+        return [
+            f"-I{self.bpf_dir}",
+            f"-I{self.include_dir}",
+            f"-I{os.path.join(self.bpf_dir, 'include')}",
+        ]
 
     def _perf_event_callback(self, cpu: int, data: bytes, size: int):
         """Callback invoked by BCC when a kernel perf event is received."""
