@@ -1,0 +1,28 @@
+# ==============================================================================
+# Detection Rule: Unexpected Root Privilege Escalation
+# ==============================================================================
+id: RULE-EDR-003
+title: Unexpected Root Privilege Escalation
+description: Detects execution of root shell or privileged commands spawned under suspicious parent context.
+severity: HIGH
+event_type:
+  - EXECVE
+
+mitre_attack:
+  tactic_id: TA0004
+  tactic_name: Privilege Escalation
+  technique_id: T1068
+  technique_name: "Exploitation for Privilege Escalation"
+
+condition:
+  and:
+    - field: uid
+      eq: 0
+    - field: comm
+      in: ["sh", "bash", "zsh", "dash", "busybox"]
+    # Exclude system init / daemon startup processes
+    - field: ppid
+      gt: 1
+    # Check if executable path is standard shell
+    - field: filename
+      in: ["/bin/sh", "/bin/bash", "/usr/bin/sh", "/usr/bin/bash", "/bin/zsh", "/bin/dash"]

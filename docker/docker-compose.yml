@@ -1,0 +1,54 @@
+# ==============================================================================
+# Docker Compose: eBPF Linux Threat Detection & EDR Agent
+# ==============================================================================
+# Deploys the EDR sensor container with required Linux capabilities and host
+# kernel mounts (/sys/kernel/debug, /sys/fs/bpf, /lib/modules) for BPF tracing.
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  edr-sensor:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: ebpf_linux_edr_sensor
+    restart: unless-stopped
+    privileged: true
+    
+    # Required Linux Capabilities for eBPF and Tracepoints
+    cap_add:
+      - SYS_ADMIN
+      - BPF
+      - PERFMON
+      - SYS_RESOURCE
+      - NET_ADMIN
+
+    # Host Namespaces for host-level visibility
+    pid: host
+    network_mode: host
+    ipc: host
+
+    # Volume mounts providing kernel headers, debugfs, and BPF filesystem
+    volumes:
+      - /sys/kernel/debug:/sys/kernel/debug:rw
+      - /sys/fs/bpf:/sys/fs/bpf:rw
+      - /lib/modules:/lib/modules:ro
+      - /usr/src:/usr/src:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./alerts:/var/log/edr:rw
+      - ../rules:/opt/ebpf-edr-agent/rules:ro
+
+    # Environment variables
+    environment:
+      - PYTHONUNBUFFERED=1
+      - EDR_RULES_DIR=/opt/ebpf-edr-agent/rules
+      - EDR_BPF_DIR=/opt/ebpf-edr-agent/bpf
+      - EDR_ALERT_LOG=/var/log/edr/edr_alerts.json
+
+    command: [
+      "--rules-dir", "/opt/ebpf-edr-agent/rules",
+      "--bpf-dir", "/opt/ebpf-edr-agent/bpf",
+      "--alert-file", "/var/log/edr/edr_alerts.json",
+      "--output-format", "pretty"
+    ]

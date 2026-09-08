@@ -1,0 +1,28 @@
+# ==============================================================================
+# Detection Rule: Process Memory Injection & PTRACE Abuse
+# ==============================================================================
+id: RULE-EDR-002
+title: Process Memory Injection & PTRACE Abuse
+description: Detects unauthorized ptrace system calls used for code injection or process tampering.
+severity: CRITICAL
+event_type:
+  - PTRACE
+
+mitre_attack:
+  tactic_id: TA0005
+  tactic_name: Defense Evasion
+  technique_id: T1055.008
+  technique_name: "Process Injection: Ptrace System Calls"
+
+condition:
+  and:
+    - field: ptrace_request
+      in:
+        - "PTRACE_ATTACH"
+        - "PTRACE_POKETEXT"
+        - "PTRACE_POKEDATA"
+        - "PTRACE_POKEUSER"
+        - "PTRACE_SEIZE"
+    # Filter out common trusted system debuggers if desired
+    - field: comm
+      not_in: ["gdb", "lldb", "strace", "perf"]

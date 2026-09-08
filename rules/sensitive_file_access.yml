@@ -1,0 +1,32 @@
+# ==============================================================================
+# Detection Rule: Sensitive Credential & System File Access
+# ==============================================================================
+id: RULE-EDR-004
+title: Sensitive Credential & System File Access
+description: Detects unauthorized read/write access to sensitive credential stores or SSH keys.
+severity: HIGH
+event_type:
+  - OPENAT
+  - EXECVE
+
+mitre_attack:
+  tactic_id: TA0006
+  tactic_name: Credential Access
+  technique_id: T1003.008
+  technique_name: "OS Credential Dumping: /etc/passwd and /etc/shadow"
+
+condition:
+  or:
+    # 1. Direct access via openat to sensitive paths
+    - and:
+        - field: file_path
+          regex_match: "^(/etc/shadow|/etc/gshadow|/etc/sudoers|/root/\\.ssh/.*|/home/[^/]+/\\.ssh/id_.*)"
+        - field: comm
+          not_in: ["login", "sshd", "su", "sudo", "systemd", "useradd", "usermod", "passwd"]
+
+    # 2. Command execution referencing sensitive paths in arguments
+    - and:
+        - field: cmdline
+          regex_match: "(/etc/shadow|/etc/gshadow|/root/\\.ssh/id_rsa)"
+        - field: comm
+          in: ["cat", "head", "tail", "grep", "awk", "sed", "curl", "nc", "python", "python3"]
