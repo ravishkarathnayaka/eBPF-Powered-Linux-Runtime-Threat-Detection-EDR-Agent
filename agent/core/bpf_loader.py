@@ -10,7 +10,7 @@ import os
 import queue
 import threading
 import time
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional, Tuple
 
 logger = logging.getLogger("edr_agent.bpf_loader")
 
