@@ -78,6 +78,7 @@ class BPFLoader:
     def _build_cflags(self) -> List[str]:
         """Generate compiler flags including search path for common.h."""
         return [
+            "-w",  # Suppress compiler warnings from kernel header macros
             f"-I{self.bpf_dir}",
             f"-I{self.include_dir}",
             f"-I{os.path.join(self.bpf_dir, 'include')}",
